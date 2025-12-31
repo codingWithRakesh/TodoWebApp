@@ -1,5 +1,6 @@
 package com.todoList.TodoListWebApp.controller;
 
+import com.todoList.TodoListWebApp.dto.LoginResponseDto;
 import com.todoList.TodoListWebApp.dto.UserCreateDto;
 import com.todoList.TodoListWebApp.dto.UserCreateResponseDto;
 import com.todoList.TodoListWebApp.dto.UserLoginDto;
@@ -32,7 +33,7 @@ public class UserController {
     }
 
     @PostMapping("/login")
-    public ResponseEntity<UserCreateResponseDto> loginUser(@RequestBody UserLoginDto userLoginDto){
+    public ResponseEntity<LoginResponseDto> loginUser(@RequestBody UserLoginDto userLoginDto){
         return ResponseEntity.status(HttpStatus.OK).body(userService.loginUser(userLoginDto));
     }
 

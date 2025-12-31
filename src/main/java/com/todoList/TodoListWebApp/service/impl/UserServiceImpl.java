@@ -1,15 +1,21 @@
 package com.todoList.TodoListWebApp.service.impl;
 
+import com.todoList.TodoListWebApp.dto.LoginResponseDto;
 import com.todoList.TodoListWebApp.dto.UserCreateDto;
 import com.todoList.TodoListWebApp.dto.UserCreateResponseDto;
 import com.todoList.TodoListWebApp.dto.UserLoginDto;
 import com.todoList.TodoListWebApp.entity.User;
 import com.todoList.TodoListWebApp.repository.UserRepository;
+import com.todoList.TodoListWebApp.security.AuthUtil;
 import com.todoList.TodoListWebApp.service.UserService;
 import jakarta.persistence.EntityNotFoundException;
 import jakarta.transaction.Transactional;
 import org.modelmapper.ModelMapper;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -21,34 +27,48 @@ import java.util.Optional;
 public class UserServiceImpl implements UserService {
     private final UserRepository userRepository;
     private final ModelMapper modelMapper;
+    private final PasswordEncoder passwordEncoder;
+    private final AuthenticationManager authenticationManager;
+    private final AuthUtil authUtill;
 
-    UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper){
+    UserServiceImpl(UserRepository userRepository, ModelMapper modelMapper, PasswordEncoder passwordEncoder, AuthenticationManager authenticationManager, AuthUtil authUtil){
         this.userRepository = userRepository;
         this.modelMapper = modelMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.authenticationManager = authenticationManager;
+        this.authUtill = authUtil;
     }
 
     @Override
     @Transactional
     public UserCreateResponseDto createUser(UserCreateDto userCreateDto) {
-        if (userRepository.existsByEmail(userCreateDto.getEmail())) {
-            throw new ResponseStatusException(
-                    HttpStatus.CONFLICT, "Email already registered");
+        User user = userRepository.findByEmail(userCreateDto.getEmail()).orElse(null);
+
+        if (user != null){
+            throw new IllegalArgumentException("user alredy exist");
         }
 
-        User user = modelMapper.map(userCreateDto, User.class);
+        User newUser = User.builder()
+                .email(userCreateDto.getEmail())
+                .name(userCreateDto.getName())
+                .password(passwordEncoder.encode(userCreateDto.getPassword()))
+                .build();
 
-        user = userRepository.save(user);
+        user = userRepository.save(newUser);
         return modelMapper.map(user, UserCreateResponseDto.class);
     }
 
     @Override
-    public UserCreateResponseDto loginUser(UserLoginDto userLoginDto) {
-        User user = userRepository.findByEmail(userLoginDto.getEmail())
-                .orElseThrow(() -> new EntityNotFoundException("User not found"));
-        if(!userLoginDto.getPassword().equals(user.getPassword())){
-            throw new IllegalArgumentException("password not match");
-        }
-        return modelMapper.map(user, UserCreateResponseDto.class);
+    public LoginResponseDto loginUser(UserLoginDto userLoginDto) {
+        Authentication authentication = authenticationManager.authenticate(
+            new UsernamePasswordAuthenticationToken(userLoginDto.getEmail(), userLoginDto.getPassword())
+        );
+
+        User user = (User) authentication.getPrincipal();
+
+        String token = authUtill.genrateAccessToken(user);
+
+        return new LoginResponseDto(user.getId(), user.getEmail(), user.getName(), token);
     }
 
     @Override

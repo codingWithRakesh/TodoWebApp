@@ -1,5 +1,6 @@
 package com.todoList.TodoListWebApp.service;
 
+import com.todoList.TodoListWebApp.dto.LoginResponseDto;
 import com.todoList.TodoListWebApp.dto.UserCreateDto;
 import com.todoList.TodoListWebApp.dto.UserCreateResponseDto;
 import com.todoList.TodoListWebApp.dto.UserLoginDto;
@@ -12,7 +13,7 @@ public interface UserService {
 
     UserCreateResponseDto createUser(UserCreateDto userCreateDto);
 
-    UserCreateResponseDto loginUser(UserLoginDto userLoginDto);
+    LoginResponseDto loginUser(UserLoginDto userLoginDto);
 
     UserCreateResponseDto findById(Long id);
 

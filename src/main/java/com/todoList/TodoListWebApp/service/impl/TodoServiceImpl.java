@@ -40,6 +40,7 @@ public class TodoServiceImpl implements TodoService {
         //2nd type
         Todo todo = modelMapper.map(todoCreateDto, Todo.class);
         todo.setUser(user);
+        user.getTodos().add(todo);
 
         Todo savedTodo = todoRepository.save(todo);
         return modelMapper.map(savedTodo, TodoResponseDto.class);
